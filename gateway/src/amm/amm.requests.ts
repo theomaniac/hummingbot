@@ -1,10 +1,8 @@
-import { PerpPosition } from '../connectors/perp/perp';
 import {
   NetworkSelectionRequest,
-  PositionInfo as LPPositionInfo,
+  PositionInfo,
 } from '../services/common-interfaces';
 export type Side = 'BUY' | 'SELL';
-export type PerpSide = 'LONG' | 'SHORT';
 
 export interface PriceRequest extends NetworkSelectionRequest {
   quote: string;
@@ -142,7 +140,7 @@ export interface PositionRequest extends NetworkSelectionRequest {
   tokenId: number;
 }
 
-export interface PositionResponse extends LPPositionInfo {
+export interface PositionResponse extends PositionInfo {
   network: string;
   timestamp: number;
   latency: number;
@@ -155,72 +153,4 @@ export interface EstimateGasResponse {
   gasPriceToken: string;
   gasLimit: number;
   gasCost: string;
-}
-
-export interface PerpPricesResponse {
-  base: string;
-  quote: string;
-  network: string;
-  timestamp: number;
-  latency: number;
-  markPrice: string;
-  indexPrice: string;
-  indexTwapPrice: string;
-}
-
-export interface PerpMarketRequest extends NetworkSelectionRequest {
-  quote: string;
-  base: string;
-}
-
-export interface PerpMarketResponse {
-  network: string;
-  timestamp: number;
-  latency: number;
-  base: string;
-  quote: string;
-  isActive: boolean;
-}
-
-export interface PerpPositionRequest extends PerpMarketRequest {
-  address: string;
-}
-
-export interface PerpPositionResponse extends PerpPosition {
-  network: string;
-  timestamp: number;
-  latency: number;
-  base: string;
-  quote: string;
-}
-
-export interface PerpAvailablePairsResponse {
-  network: string;
-  timestamp: number;
-  latency: number;
-  pairs: string[];
-}
-
-export interface PerpCreateTakerRequest extends NetworkSelectionRequest {
-  quote: string;
-  base: string;
-  address: string;
-  amount?: string;
-  side?: PerpSide;
-  nonce?: number;
-}
-
-export interface PerpCreateTakerResponse {
-  network: string;
-  timestamp: number;
-  latency: number;
-  base: string;
-  quote: string;
-  amount: string;
-  gasPrice: number;
-  gasPriceToken: string;
-  gasLimit: number;
-  gasCost: string;
-  nonce: number;
-  txHash: string | undefined;
 }

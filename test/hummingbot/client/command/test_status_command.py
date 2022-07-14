@@ -1,12 +1,13 @@
 import asyncio
 import unittest
-from test.mock.mock_cli import CLIMockingAssistant
+from copy import deepcopy
 from typing import Awaitable
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch, MagicMock
 
-from hummingbot.client.config.client_config_map import ClientConfigMap
-from hummingbot.client.config.config_helpers import ClientConfigAdapter, read_system_configs_from_yml
+from hummingbot.client.config.config_helpers import read_system_configs_from_yml
+from hummingbot.client.config.global_config_map import global_config_map
 from hummingbot.client.hummingbot_application import HummingbotApplication
+from test.mock.mock_cli import CLIMockingAssistant
 
 
 class StatusCommandTest(unittest.TestCase):
@@ -16,15 +17,20 @@ class StatusCommandTest(unittest.TestCase):
         self.ev_loop = asyncio.get_event_loop()
 
         self.async_run_with_timeout(read_system_configs_from_yml())
-        self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
-        self.app = HummingbotApplication(client_config_map=self.client_config_map)
+        self.app = HummingbotApplication()
         self.cli_mock_assistant = CLIMockingAssistant(self.app.app)
         self.cli_mock_assistant.start()
+        self.global_config_backup = deepcopy(global_config_map)
 
     def tearDown(self) -> None:
         self.cli_mock_assistant.stop()
+        self.reset_global_config()
         super().tearDown()
+
+    def reset_global_config(self):
+        for key, value in self.global_config_backup.items():
+            global_config_map[key] = value
 
     @staticmethod
     def get_async_sleep_fn(delay: float):
@@ -53,17 +59,15 @@ class StatusCommandTest(unittest.TestCase):
         except asyncio.TimeoutError:  # the coroutine did not finish on time
             raise RuntimeError
 
-    @patch("hummingbot.client.command.status_command.StatusCommand.validate_configs")
     @patch("hummingbot.client.command.status_command.StatusCommand.validate_required_connections")
     @patch("hummingbot.client.config.security.Security.is_decryption_done")
     def test_status_check_all_handles_network_timeouts(
-        self, is_decryption_done_mock, validate_required_connections_mock, validate_configs_mock
+        self, is_decryption_done_mock, validate_required_connections_mock
     ):
         validate_required_connections_mock.side_effect = self.get_async_sleep_fn(delay=0.02)
-        validate_configs_mock.return_value = []
-        self.client_config_map.commands_timeout.other_commands_timeout = 0.01
+        global_config_map["other_commands_timeout"].value = 0.01
         is_decryption_done_mock.return_value = True
-        strategy_name = "avellaneda_market_making"
+        strategy_name = "some-strategy"
         self.app.strategy_name = strategy_name
         self.app.strategy_file_name = f"{strategy_name}.yml"
 

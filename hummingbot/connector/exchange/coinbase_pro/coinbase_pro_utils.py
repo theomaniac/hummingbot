@@ -2,9 +2,8 @@ import typing
 from dataclasses import dataclass
 from typing import Optional
 
-from pydantic import Field, SecretStr
-
-from hummingbot.client.config.config_data_types import BaseConnectorConfigMap, ClientFieldData
+from hummingbot.client.config.config_methods import using_exchange
+from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.connector.exchange.coinbase_pro import coinbase_pro_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.connections.data_types import EndpointRESTRequest
@@ -19,42 +18,26 @@ EXAMPLE_PAIR = "ETH-USDC"
 
 DEFAULT_FEES = [0.5, 0.5]
 
-
-class CoinbaseProConfigMap(BaseConnectorConfigMap):
-    connector: str = Field(default="coinbase_pro", client_data=None)
-    coinbase_pro_api_key: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your Coinbase API key",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-    coinbase_pro_secret_key: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your Coinbase secret key",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-    coinbase_pro_passphrase: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your Coinbase passphrase",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-
-    class Config:
-        title = "coinbase_pro"
-
-
-KEYS = CoinbaseProConfigMap.construct()
+KEYS = {
+    "coinbase_pro_api_key":
+        ConfigVar(key="coinbase_pro_api_key",
+                  prompt="Enter your Coinbase API key >>> ",
+                  required_if=using_exchange("coinbase_pro"),
+                  is_secure=True,
+                  is_connect_key=True),
+    "coinbase_pro_secret_key":
+        ConfigVar(key="coinbase_pro_secret_key",
+                  prompt="Enter your Coinbase secret key >>> ",
+                  required_if=using_exchange("coinbase_pro"),
+                  is_secure=True,
+                  is_connect_key=True),
+    "coinbase_pro_passphrase":
+        ConfigVar(key="coinbase_pro_passphrase",
+                  prompt="Enter your Coinbase passphrase >>> ",
+                  required_if=using_exchange("coinbase_pro"),
+                  is_secure=True,
+                  is_connect_key=True),
+}
 
 
 @dataclass

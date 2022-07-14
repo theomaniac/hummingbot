@@ -1,18 +1,15 @@
-import asyncio
 import unittest
+from copy import deepcopy
 from decimal import Decimal
+import asyncio
 from typing import Awaitable
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import patch, MagicMock, AsyncMock, PropertyMock
 
 import pandas as pd
 
-from hummingbot.client.ui.interface_utils import (
-    format_bytes,
-    format_df_for_printout,
-    start_process_monitor,
-    start_timer,
-    start_trade_monitor,
-)
+from hummingbot.client.config.global_config_map import global_config_map
+from hummingbot.client.ui.interface_utils import start_trade_monitor, \
+    format_bytes, start_timer, start_process_monitor, format_df_for_printout
 
 
 class ExpectedException(Exception):
@@ -30,9 +27,19 @@ class InterfaceUtilsTest(unittest.TestCase):
         super().setUp()
         self.ev_loop = asyncio.get_event_loop()
 
+        self.global_config_backup = deepcopy(global_config_map)
+
+    def tearDown(self) -> None:
+        self.reset_global_config()
+        super().tearDown()
+
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
         ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
+
+    def reset_global_config(self):
+        for key, value in self.global_config_backup.items():
+            global_config_map[key] = value
 
     def test_format_bytes(self):
         size = 1024.
@@ -220,7 +227,8 @@ class InterfaceUtilsTest(unittest.TestCase):
             }
         )
 
-        df_str = format_df_for_printout(df, table_format="psql")
+        global_config_map.get("tables_format").value = "psql"
+        df_str = format_df_for_printout(df)
         target_str = (
             "+---------+----------+"
             "\n|   first |   second |"
@@ -232,7 +240,8 @@ class InterfaceUtilsTest(unittest.TestCase):
 
         self.assertEqual(target_str, df_str)
 
-        df_str = format_df_for_printout(df, table_format="simple")
+        global_config_map.get("tables_format").value = "simple"
+        df_str = format_df_for_printout(df)
         target_str = (
             "  first    second"
             "\n-------  --------"

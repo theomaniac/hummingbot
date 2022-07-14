@@ -1,15 +1,12 @@
-import unittest.mock
 from decimal import Decimal
-from test.hummingbot.strategy import assign_config_default
-from test.mock.mock_perp_connector import MockPerpConnector
-
+import unittest.mock
 import hummingbot.strategy.spot_perpetual_arbitrage.start as strategy_start
-from hummingbot.client.config.client_config_map import ClientConfigMap
-from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.strategy.spot_perpetual_arbitrage.spot_perpetual_arbitrage_config_map import (
-    spot_perpetual_arbitrage_config_map as strategy_cmap,
+    spot_perpetual_arbitrage_config_map as strategy_cmap
 )
+from test.hummingbot.strategy import assign_config_default
+from test.mock.mock_perp_connector import MockPerpConnector
 
 
 class SpotPerpetualArbitrageStartTest(unittest.TestCase):
@@ -17,10 +14,7 @@ class SpotPerpetualArbitrageStartTest(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.strategy = None
-        self.client_config_map = ClientConfigAdapter(ClientConfigMap())
-        self.markets = {
-            "binance": ExchangeBase(client_config_map=self.client_config_map),
-            "kucoin": MockPerpConnector(client_config_map=self.client_config_map)}
+        self.markets = {"binance": ExchangeBase(), "kucoin": MockPerpConnector()}
         self.notifications = []
         self.log_errors = []
         assign_config_default(strategy_cmap)

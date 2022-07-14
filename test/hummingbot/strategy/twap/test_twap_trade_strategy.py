@@ -1,15 +1,17 @@
 import time
-from datetime import datetime
 from decimal import Decimal
-from test.hummingbot.strategy.twap.twap_test_support import MockExchange
+from datetime import datetime
 from unittest import TestCase
 
-from hummingbot.client.config.client_config_map import ClientConfigMap
-from hummingbot.client.config.config_helpers import ClientConfigAdapter
-from hummingbot.core.clock import Clock, ClockMode
+from hummingbot.core.clock import (
+    Clock,
+    ClockMode)
 from hummingbot.strategy.conditional_execution_state import RunInTimeConditionalExecutionState
-from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+
 from hummingbot.strategy.twap import TwapTradeStrategy
+from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+
+from test.hummingbot.strategy.twap.twap_test_support import MockExchange
 
 
 class TwapTradeStrategyTest(TestCase):
@@ -39,7 +41,7 @@ class TwapTradeStrategyTest(TestCase):
         self.assertEqual(str(ex_context.exception), "market_infos must not be empty.")
 
     def test_start(self):
-        exchange = MockExchange(client_config_map=ClientConfigAdapter(ClientConfigMap()))
+        exchange = MockExchange()
         marketTuple = MarketTradingPairTuple(exchange, "ETH-USDT", "ETH", "USDT")
         strategy = TwapTradeStrategy(market_infos=[marketTuple],
                                      is_buy=True,
@@ -55,7 +57,7 @@ class TwapTradeStrategyTest(TestCase):
         self.assertTrue(self._is_logged('INFO', 'Waiting for 10.0 to place orders'))
 
     def test_tick_logs_warning_when_market_not_ready(self):
-        exchange = MockExchange(client_config_map=ClientConfigAdapter(ClientConfigMap()))
+        exchange = MockExchange()
         exchange.ready = False
         marketTuple = MarketTradingPairTuple(exchange, "ETH-USDT", "ETH", "USDT")
         strategy = TwapTradeStrategy(market_infos=[marketTuple],
@@ -73,7 +75,7 @@ class TwapTradeStrategyTest(TestCase):
         self.assertTrue(self._is_logged('WARNING', "Markets are not ready. No market making trades are permitted."))
 
     def test_tick_logs_warning_when_market_not_connected(self):
-        exchange = MockExchange(client_config_map=ClientConfigAdapter(ClientConfigMap()))
+        exchange = MockExchange()
         exchange.ready = True
         marketTuple = MarketTradingPairTuple(exchange, "ETH-USDT", "ETH", "USDT")
         strategy = TwapTradeStrategy(market_infos=[marketTuple],
@@ -93,7 +95,7 @@ class TwapTradeStrategyTest(TestCase):
                                          "Market making may be dangerous when markets or networks are unstable.")))
 
     def test_status(self):
-        exchange = MockExchange(client_config_map=ClientConfigAdapter(ClientConfigMap()))
+        exchange = MockExchange()
         exchange.buy_price = Decimal("25100")
         exchange.sell_price = Decimal("24900")
         exchange.update_account_balance({"ETH": Decimal("100000"), "USDT": Decimal(10000)})
@@ -126,7 +128,7 @@ class TwapTradeStrategyTest(TestCase):
         self.assertEqual(expected_status, status)
 
     def test_status_with_time_span_execution(self):
-        exchange = MockExchange(client_config_map=ClientConfigAdapter(ClientConfigMap()))
+        exchange = MockExchange()
         exchange.buy_price = Decimal("25100")
         exchange.sell_price = Decimal("24900")
         exchange.update_account_balance({"ETH": Decimal("100000"), "USDT": Decimal(10000)})
@@ -164,7 +166,7 @@ class TwapTradeStrategyTest(TestCase):
         self.assertEqual(expected_status, status)
 
     def test_status_with_delayed_start_execution(self):
-        exchange = MockExchange(client_config_map=ClientConfigAdapter(ClientConfigMap()))
+        exchange = MockExchange()
         exchange.buy_price = Decimal("25100")
         exchange.sell_price = Decimal("24900")
         exchange.update_account_balance({"ETH": Decimal("100000"), "USDT": Decimal(10000)})

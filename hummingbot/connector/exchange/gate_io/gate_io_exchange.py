@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from bidict import bidict
 
@@ -21,9 +21,6 @@ from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
-if TYPE_CHECKING:
-    from hummingbot.client.config.config_helpers import ClientConfigAdapter
-
 
 class GateIoExchange(ExchangePyBase):
     DEFAULT_DOMAIN = ""
@@ -34,7 +31,6 @@ class GateIoExchange(ExchangePyBase):
     web_utils = web_utils
 
     def __init__(self,
-                 client_config_map: "ClientConfigAdapter",
                  gate_io_api_key: str,
                  gate_io_secret_key: str,
                  trading_pairs: Optional[List[str]] = None,
@@ -52,7 +48,7 @@ class GateIoExchange(ExchangePyBase):
         self._trading_required = trading_required
         self._trading_pairs = trading_pairs
 
-        super().__init__(client_config_map)
+        super().__init__()
 
     @property
     def authenticator(self):

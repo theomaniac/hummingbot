@@ -1,12 +1,18 @@
-from decimal import Decimal
-
-from hummingbot.client.config.config_validators import validate_decimal, validate_exchange, validate_market_trading_pair
 from hummingbot.client.config.config_var import ConfigVar
-from hummingbot.client.settings import AllConnectorSettings, required_exchanges
+from hummingbot.client.config.config_validators import (
+    validate_exchange,
+    validate_market_trading_pair,
+    validate_decimal
+)
+from hummingbot.client.settings import (
+    required_exchanges,
+    AllConnectorSettings,
+)
+from decimal import Decimal
 
 
 def exchange_on_validated(value: str) -> None:
-    required_exchanges.add(value)
+    required_exchanges.append(value)
 
 
 def market_trading_pair_prompt() -> str:

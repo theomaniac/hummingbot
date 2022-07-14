@@ -1,8 +1,7 @@
 from typing import Optional
 
-from pydantic import Field, SecretStr
-
-from hummingbot.client.config.config_data_types import BaseConnectorConfigMap, ClientFieldData
+from hummingbot.client.config.config_methods import using_exchange
+from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.connector.exchange.ndax import ndax_constants as CONSTANTS
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 
@@ -39,98 +38,62 @@ def wss_url(connector_variant_label: Optional[str]) -> str:
     return CONSTANTS.WSS_URLS.get(variant)
 
 
-class NdaxConfigMap(BaseConnectorConfigMap):
-    connector: str = Field(default="ndax", client_data=None)
-    ndax_uid: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your NDAX user ID (uid)",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-    ndax_account_name: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter the name of the account you want to use",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-    ndax_api_key: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your NDAX API key",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-    ndax_secret_key: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your NDAX secret key",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-
-    class Config:
-        title = "ndax"
-
-
-KEYS = NdaxConfigMap.construct()
+KEYS = {
+    "ndax_uid":
+        ConfigVar(key="ndax_uid",
+                  prompt="Enter your NDAX user ID (uid) >>> ",
+                  required_if=using_exchange("ndax"),
+                  is_secure=True,
+                  is_connect_key=True),
+    "ndax_account_name":
+        ConfigVar(key="ndax_account_name",
+                  prompt="Enter the name of the account you want to use >>> ",
+                  required_if=using_exchange("ndax"),
+                  is_secure=True,
+                  is_connect_key=True),
+    "ndax_api_key":
+        ConfigVar(key="ndax_api_key",
+                  prompt="Enter your NDAX API key >>> ",
+                  required_if=using_exchange("ndax"),
+                  is_secure=True,
+                  is_connect_key=True),
+    "ndax_secret_key":
+        ConfigVar(key="ndax_secret_key",
+                  prompt="Enter your NDAX secret key >>> ",
+                  required_if=using_exchange("ndax"),
+                  is_secure=True,
+                  is_connect_key=True),
+}
 
 OTHER_DOMAINS = ["ndax_testnet"]
 OTHER_DOMAINS_PARAMETER = {"ndax_testnet": "ndax_testnet"}
 OTHER_DOMAINS_EXAMPLE_PAIR = {"ndax_testnet": "BTC-CAD"}
 OTHER_DOMAINS_DEFAULT_FEES = {"ndax_testnet": [0.2, 0.2]}
-
-
-class NdaxTestnetConfigMap(BaseConnectorConfigMap):
-    connector: str = Field(default="ndax_testnet", client_data=None)
-    ndax_testnet_uid: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your NDAX Testnet user ID (uid)",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-    ndax_testnet_account_name: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter the name of the account you want to use",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-    ndax_testnet_api_key: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your NDAX Testnet API key",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-    ndax_testnet_secret_key: SecretStr = Field(
-        default=...,
-        client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your NDAX Testnet secret key",
-            is_secure=True,
-            is_connect_key=True,
-            prompt_on_new=True,
-        )
-    )
-
-    class Config:
-        title = "ndax_testnet"
-
-
-OTHER_DOMAINS_KEYS = {"ndax_testnet": NdaxTestnetConfigMap.construct()}
+OTHER_DOMAINS_KEYS = {
+    "ndax_testnet": {
+        "ndax_testnet_uid":
+            ConfigVar(key="ndax_testnet_uid",
+                      prompt="Enter your NDAX user ID (uid) >>> ",
+                      required_if=using_exchange("ndax_testnet"),
+                      is_secure=True,
+                      is_connect_key=True),
+        "ndax_testnet_account_name":
+            ConfigVar(key="ndax_testnet_account_name",
+                      prompt="Enter the name of the account you want to use >>> ",
+                      required_if=using_exchange("ndax_testnet"),
+                      is_secure=True,
+                      is_connect_key=True),
+        "ndax_testnet_api_key":
+            ConfigVar(key="ndax_testnet_api_key",
+                      prompt="Enter your NDAX API key >>> ",
+                      required_if=using_exchange("ndax_testnet"),
+                      is_secure=True,
+                      is_connect_key=True),
+        "ndax_testnet_secret_key":
+            ConfigVar(key="ndax_testnet_secret_key",
+                      prompt="Enter your NDAX secret key >>> ",
+                      required_if=using_exchange("ndax_testnet"),
+                      is_secure=True,
+                      is_connect_key=True),
+    }
+}

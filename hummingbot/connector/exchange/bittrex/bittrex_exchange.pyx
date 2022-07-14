@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Any, AsyncIterable, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, AsyncIterable, Dict, List, Optional
 
 import aiohttp
 from async_timeout import timeout
@@ -36,9 +36,6 @@ from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 from hummingbot.core.utils.estimate_fee import estimate_fee
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 from hummingbot.logger import HummingbotLogger
-
-if TYPE_CHECKING:
-    from hummingbot.client.config.config_helpers import ClientConfigAdapter
 
 bm_logger = None
 s_decimal_0 = Decimal(0)
@@ -83,13 +80,12 @@ cdef class BittrexExchange(ExchangeBase):
         return bm_logger
 
     def __init__(self,
-                 client_config_map: "ClientConfigAdapter",
                  bittrex_api_key: str,
                  bittrex_secret_key: str,
                  poll_interval: float = 5.0,
                  trading_pairs: Optional[List[str]] = None,
                  trading_required: bool = True):
-        super().__init__(client_config_map)
+        super().__init__()
         self._account_available_balances = {}
         self._account_balances = {}
         self._account_id = ""

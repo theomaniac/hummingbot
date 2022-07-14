@@ -3,9 +3,8 @@ import unittest
 from decimal import Decimal
 from unittest.mock import patch
 
-from hummingbot.client.config.client_config_map import ClientConfigMap
-from hummingbot.client.config.config_helpers import ClientConfigAdapter
-from hummingbot.connector.exchange.probit.probit_constants import MAX_ORDER_ID_LEN
+from hummingbot.connector.exchange.probit.probit_constants import \
+    MAX_ORDER_ID_LEN
 from hummingbot.connector.exchange.probit.probit_exchange import ProbitExchange
 from hummingbot.connector.utils import get_new_client_order_id
 from hummingbot.core.event.events import OrderType
@@ -24,12 +23,8 @@ class TestProbitExchange(unittest.TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.client_config_map = ClientConfigAdapter(ClientConfigMap())
         self.exchange = ProbitExchange(
-            client_config_map=self.client_config_map,
-            probit_api_key=self.api_key,
-            probit_secret_key=self.api_secret_key,
-            trading_pairs=[self.trading_pair]
+            self.api_key, self.api_secret_key, trading_pairs=[self.trading_pair]
         )
 
     @patch("hummingbot.connector.utils.get_tracking_nonce_low_res")

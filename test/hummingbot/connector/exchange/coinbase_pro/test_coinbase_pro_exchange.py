@@ -7,8 +7,6 @@ from typing import Awaitable, Dict, List
 
 from aioresponses import aioresponses
 
-from hummingbot.client.config.client_config_map import ClientConfigMap
-from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange.coinbase_pro import coinbase_pro_constants as CONSTANTS
 from hummingbot.connector.exchange.coinbase_pro.coinbase_pro_exchange import CoinbaseProExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
@@ -46,14 +44,9 @@ class TestCoinbaseProExchange(unittest.TestCase):
         self.log_records = []
         self.mocking_assistant = NetworkMockingAssistant()
         self.async_tasks: List[asyncio.Task] = []
-        self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
         self.exchange = CoinbaseProExchange(
-            client_config_map=self.client_config_map,
-            coinbase_pro_api_key=self.api_key,
-            coinbase_pro_secret_key=self.api_secret,
-            coinbase_pro_passphrase=self.api_passphrase,
-            trading_pairs=[self.trading_pair]
+            self.api_key, self.api_secret, self.api_passphrase, trading_pairs=[self.trading_pair]
         )
         self.event_listener = EventLogger()
 

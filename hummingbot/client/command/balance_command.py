@@ -1,15 +1,16 @@
 import asyncio
 import threading
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import pandas as pd
 
+from hummingbot.client.config.config_helpers import save_to_yml
 from hummingbot.client.config.config_validators import validate_decimal, validate_exchange
+from hummingbot.client.config.global_config_map import global_config_map
 from hummingbot.client.performance import PerformanceMetrics
-from hummingbot.client.settings import AllConnectorSettings
+from hummingbot.client.settings import GLOBAL_CONFIG_PATH, AllConnectorSettings
 from hummingbot.connector.other.celo.celo_cli import CeloCLI
-from hummingbot.connector.other.celo.celo_data_types import KEYS as CELO_KEYS
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.user.user_balances import UserBalances
@@ -24,7 +25,7 @@ OPTIONS = [
 
 
 class BalanceCommand:
-    def balance(self,  # type: HummingbotApplication
+    def balance(self,
                 option: str = None,
                 args: List[str] = None
                 ):
@@ -37,8 +38,10 @@ class BalanceCommand:
             safe_ensure_future(self.show_balances())
 
         elif option in OPTIONS:
+            config_map = global_config_map
+            file_path = GLOBAL_CONFIG_PATH
             if option == "limit":
-                balance_asset_limit = self.client_config_map.balance_asset_limit
+                config_var = config_map["balance_asset_limit"]
                 if args is None or len(args) == 0:
                     safe_ensure_future(self.show_asset_limits())
                     return
@@ -49,18 +52,18 @@ class BalanceCommand:
                 exchange = args[0]
                 asset = args[1].upper()
                 amount = float(args[2])
-                if balance_asset_limit.get(exchange) is None:
-                    balance_asset_limit[exchange] = {}
-                if amount < 0 and asset in balance_asset_limit[exchange].keys():
-                    balance_asset_limit[exchange].pop(asset)
+                if exchange not in config_var.value or config_var.value[exchange] is None:
+                    config_var.value[exchange] = {}
+                if amount < 0 and asset in config_var.value[exchange].keys():
+                    config_var.value[exchange].pop(asset)
                     self.notify(f"Limit for {asset} on {exchange} exchange removed.")
                 elif amount >= 0:
-                    balance_asset_limit[exchange][asset] = amount
+                    config_var.value[exchange][asset] = amount
                     self.notify(f"Limit for {asset} on {exchange} exchange set to {amount}")
-                self.save_client_config()
+                save_to_yml(file_path, config_map)
 
             elif option == "paper":
-                paper_balances = self.client_config_map.paper_trade.paper_trade_account_balance
+                config_var = config_map["paper_trade_account_balance"]
                 if args is None or len(args) == 0:
                     safe_ensure_future(self.show_paper_account_balance())
                     return
@@ -70,25 +73,29 @@ class BalanceCommand:
                     return
                 asset = args[0].upper()
                 amount = float(args[1])
+                paper_balances = dict(config_var.value) if config_var.value else {}
                 paper_balances[asset] = amount
+                config_var.value = paper_balances
                 self.notify(f"Paper balance for {asset} token set to {amount}")
-                self.save_client_config()
+                save_to_yml(file_path, config_map)
 
-    async def show_balances(
-        self  # type: HummingbotApplication
-    ):
+    async def show_balances(self):
         total_col_name = f'Total ({RateOracle.global_token_symbol})'
         sum_not_for_show_name = "sum_not_for_show"
         self.notify("Updating balances, please wait...")
-        network_timeout = float(self.client_config_map.commands_timeout.other_commands_timeout)
+        network_timeout = float(global_config_map["other_commands_timeout"].value)
         try:
             all_ex_bals = await asyncio.wait_for(
-                UserBalances.instance().all_balances_all_exchanges(self.client_config_map), network_timeout
+                UserBalances.instance().all_balances_all_exchanges(), network_timeout
             )
         except asyncio.TimeoutError:
             self.notify("\nA network error prevented the balances to update. See logs for more details.")
             raise
         all_ex_avai_bals = UserBalances.instance().all_available_balances_all_exchanges()
+        all_ex_limits: Optional[Dict[str, Dict[str, str]]] = global_config_map["balance_asset_limit"].value
+
+        if all_ex_limits is None:
+            all_ex_limits = {}
 
         exchanges_total = 0
 
@@ -110,7 +117,7 @@ class BalanceCommand:
 
         self.notify(f"\n\nExchanges Total: {RateOracle.global_token_symbol} {exchanges_total:.0f}    ")
 
-        celo_address = CELO_KEYS.celo_address if hasattr(CELO_KEYS, "celo_address") else None
+        celo_address = global_config_map["celo_address"].value
         if celo_address is not None:
             try:
                 if not CeloCLI.unlocked:
@@ -179,10 +186,9 @@ class BalanceCommand:
         df.sort_values(by=["Asset"], inplace=True)
         return df
 
-    async def show_asset_limits(
-        self  # type: HummingbotApplication
-    ):
-        exchange_limit_conf = self.client_config_map.balance_asset_limit
+    async def show_asset_limits(self):
+        config_var = global_config_map["balance_asset_limit"]
+        exchange_limit_conf: Dict[str, Dict[str, str]] = config_var.value
 
         if not any(list(exchange_limit_conf.values())):
             self.notify("You have not set any limits.")
@@ -223,10 +229,8 @@ class BalanceCommand:
                     "    balance paper [ASSET] [AMOUNT]\n"
                     "e.g. balance paper BTC 0.1")
 
-    async def show_paper_account_balance(
-        self  # type: HummingbotApplication
-    ):
-        paper_balances = self.client_config_map.paper_trade.paper_trade_account_balance
+    async def show_paper_account_balance(self):
+        paper_balances = global_config_map["paper_trade_account_balance"].value
         if not paper_balances:
             self.notify("You have not set any paper account balance.")
             self.notify_balance_paper_set()

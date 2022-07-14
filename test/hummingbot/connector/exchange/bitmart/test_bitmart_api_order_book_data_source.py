@@ -10,8 +10,6 @@ from aioresponses import aioresponses
 from bidict import bidict
 
 import hummingbot.connector.exchange.bitmart.bitmart_constants as CONSTANTS
-from hummingbot.client.config.client_config_map import ClientConfigMap
-from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange.bitmart import bitmart_utils
 from hummingbot.connector.exchange.bitmart.bitmart_api_order_book_data_source import BitmartAPIOrderBookDataSource
 from hummingbot.connector.exchange.bitmart.bitmart_exchange import BitmartExchange
@@ -44,10 +42,8 @@ class BitmartAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         self.log_records = []
         self.listening_task = None
         self.mocking_assistant = NetworkMockingAssistant()
-        self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
         self.connector = BitmartExchange(
-            client_config_map=self.client_config_map,
             bitmart_api_key="",
             bitmart_secret_key="",
             bitmart_memo="",

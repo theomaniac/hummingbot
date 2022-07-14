@@ -15,18 +15,16 @@ import path_util  # noqa: F401
 from bin.docker_connection import fork_and_start
 from bin.hummingbot import UIStartListener, detect_available_port
 from hummingbot import init_logging
-from hummingbot.client.config.config_crypt import BaseSecretsManager, ETHKeyFileSecretManger
-from hummingbot.client.config.config_data_types import BaseStrategyConfigMap
 from hummingbot.client.config.config_helpers import (
     all_configs_complete,
-    create_yml_files_legacy,
-    load_client_config_map_from_file,
-    load_strategy_config_map_from_file,
+    create_yml_files,
     read_system_configs_from_yml,
+    update_strategy_config_map_from_file,
 )
+from hummingbot.client.config.global_config_map import global_config_map
 from hummingbot.client.config.security import Security
 from hummingbot.client.hummingbot_application import HummingbotApplication
-from hummingbot.client.settings import STRATEGIES_CONF_DIR_PATH, AllConnectorSettings
+from hummingbot.client.settings import CONF_FILE_PATH, AllConnectorSettings
 from hummingbot.client.ui import login_prompt
 from hummingbot.client.ui.style import load_style
 from hummingbot.core.event.events import HummingbotUIEvent
@@ -73,42 +71,37 @@ def autofix_permissions(user_group_spec: str):
     os.setuid(uid)
 
 
-async def quick_start(args: argparse.Namespace, secrets_manager: BaseSecretsManager):
+async def quick_start(args: argparse.Namespace):
     config_file_name = args.config_file_name
-    client_config = load_client_config_map_from_file()
+    password = args.config_password
 
     if args.auto_set_permissions is not None:
         autofix_permissions(args.auto_set_permissions)
 
-    if not Security.login(secrets_manager):
+    if password is not None and not Security.login(password):
         logging.getLogger().error("Invalid password.")
         return
 
     await Security.wait_til_decryption_done()
-    await create_yml_files_legacy()
-    init_logging("hummingbot_logs.yml", client_config)
+    await create_yml_files()
+    init_logging("hummingbot_logs.yml")
     await read_system_configs_from_yml()
 
-    AllConnectorSettings.initialize_paper_trade_settings(client_config.paper_trade.paper_trade_exchanges)
+    AllConnectorSettings.initialize_paper_trade_settings(global_config_map.get("paper_trade_exchanges").value)
 
     hb = HummingbotApplication.main_application()
     # Todo: validate strategy and config_file_name before assinging
 
-    strategy_config = None
     if config_file_name is not None:
         hb.strategy_file_name = config_file_name
-        strategy_config = await load_strategy_config_map_from_file(
-            STRATEGIES_CONF_DIR_PATH / config_file_name
-        )
-        hb.strategy_name = (
-            strategy_config.strategy
-            if isinstance(strategy_config, BaseStrategyConfigMap)
-            else strategy_config.get("strategy").value
-        )
-        hb.strategy_config_map = strategy_config
+        hb.strategy_name = await update_strategy_config_map_from_file(os.path.join(CONF_FILE_PATH, config_file_name))
 
-    if strategy_config is not None:
-        if not all_configs_complete(strategy_config, hb.client_config_map):
+    # To ensure quickstart runs with the default value of False for kill_switch_enabled if not present
+    if not global_config_map.get("kill_switch_enabled"):
+        global_config_map.get("kill_switch_enabled").value = False
+
+    if hb.strategy_name and hb.strategy_file_name:
+        if not all_configs_complete(hb.strategy_name):
             hb.status()
 
     # The listener needs to have a named variable for keeping reference, since the event listener system
@@ -116,8 +109,8 @@ async def quick_start(args: argparse.Namespace, secrets_manager: BaseSecretsMana
     start_listener: UIStartListener = UIStartListener(hb)
     hb.app.add_listener(HummingbotUIEvent.Start, start_listener)
 
-    tasks: List[Coroutine] = [hb.run(), start_existing_gateway_container(client_config)]
-    if client_config.debug_console:
+    tasks: List[Coroutine] = [hb.run(), start_existing_gateway_container()]
+    if global_config_map.get("debug_console").value:
         management_port: int = detect_available_port(8211)
         tasks.append(start_management_console(locals(), host="localhost", port=management_port))
 
@@ -136,16 +129,12 @@ def main():
         args.config_password = os.environ["CONFIG_PASSWORD"]
 
     # If no password is given from the command line, prompt for one.
-    secrets_manager_cls = ETHKeyFileSecretManger
-    client_config_map = load_client_config_map_from_file()
+    asyncio.get_event_loop().run_until_complete(read_system_configs_from_yml())
     if args.config_password is None:
-        secrets_manager = login_prompt(secrets_manager_cls, style=load_style(client_config_map))
-        if not secrets_manager:
+        if not login_prompt(style=load_style()):
             return
-    else:
-        secrets_manager = secrets_manager_cls(args.config_password)
 
-    asyncio.get_event_loop().run_until_complete(quick_start(args, secrets_manager))
+    asyncio.get_event_loop().run_until_complete(quick_start(args))
 
 
 if __name__ == "__main__":

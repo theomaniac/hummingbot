@@ -1,15 +1,18 @@
-from decimal import Decimal
-from typing import List, Tuple
+from typing import (
+    List,
+    Tuple,
+)
 
-from hummingbot.connector.exchange.paper_trade import create_paper_trade_market
-from hummingbot.connector.exchange_base import ExchangeBase
-from hummingbot.strategy.api_asset_price_delegate import APIAssetPriceDelegate
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.order_book_asset_price_delegate import OrderBookAssetPriceDelegate
-from hummingbot.strategy.perpetual_market_making import PerpetualMarketMakingStrategy
-from hummingbot.strategy.perpetual_market_making.perpetual_market_making_config_map import (
-    perpetual_market_making_config_map as c_map,
+from hummingbot.strategy.api_asset_price_delegate import APIAssetPriceDelegate
+from hummingbot.strategy.perpetual_market_making import (
+    PerpetualMarketMakingStrategy,
 )
+from hummingbot.strategy.perpetual_market_making.perpetual_market_making_config_map import perpetual_market_making_config_map as c_map
+from hummingbot.connector.exchange.paper_trade import create_paper_trade_market
+from hummingbot.connector.exchange_base import ExchangeBase
+from decimal import Decimal
 
 
 def start(self):
@@ -55,15 +58,11 @@ def start(self):
         asset_price_delegate = None
         if price_source == "external_market":
             asset_trading_pair: str = price_source_market
-            ext_market = create_paper_trade_market(
-                price_source_exchange, self.client_config_map, [asset_trading_pair]
-            )
+            ext_market = create_paper_trade_market(price_source_exchange, [asset_trading_pair])
             self.markets[price_source_exchange]: ExchangeBase = ext_market
             asset_price_delegate = OrderBookAssetPriceDelegate(ext_market, asset_trading_pair)
         elif price_source == "custom_api":
-            ext_market = create_paper_trade_market(
-                exchange, self.client_config_map, [raw_trading_pair]
-            )
+            ext_market = create_paper_trade_market(exchange, [raw_trading_pair])
             asset_price_delegate = APIAssetPriceDelegate(ext_market, price_source_custom_api,
                                                          custom_api_update_interval)
 

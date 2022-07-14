@@ -5,8 +5,6 @@ from unittest.mock import patch
 
 from sqlalchemy import create_engine
 
-from hummingbot.client.config.client_config_map import ClientConfigMap
-from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.markets_recorder import MarketsRecorder
 from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
@@ -24,7 +22,7 @@ from hummingbot.model.trade_fill import TradeFill
 
 class MarketsRecorderTests(TestCase):
 
-    @patch("hummingbot.model.sql_connection_manager.create_engine")
+    @patch("hummingbot.model.sql_connection_manager.SQLConnectionManager.get_db_engine")
     def setUp(self, engine_mock) -> None:
         super().setUp()
         self.display_name = "test_market"
@@ -37,9 +35,7 @@ class MarketsRecorderTests(TestCase):
         self.trading_pair = f"{self.base}-{self.quote}"
 
         engine_mock.return_value = create_engine("sqlite:///:memory:")
-        self.manager = SQLConnectionManager(
-            ClientConfigAdapter(ClientConfigMap()), SQLConnectionType.TRADE_FILLS, db_name="test_DB"
-        )
+        self.manager = SQLConnectionManager(SQLConnectionType.TRADE_FILLS, db_name="test_DB")
 
         self.tracking_states = dict()
 
